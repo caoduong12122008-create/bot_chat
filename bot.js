@@ -21,7 +21,6 @@ const maxStyleContext = 12;
 const maxConversation = 16;
 const cooldownMs = Number(process.env.REPLY_COOLDOWN_MS || 8000);
 const reactionChance = Number(process.env.RANDOM_REACTION_CHANCE || 0.12);
-const randomReactions = ["😂", "❤️", "😭", "😳", "🔥", "👀", "🤨", "👏"];
 const cooldowns = new Map();
 const repliesInProgress = new Set();
 
@@ -110,6 +109,25 @@ function learnedStyle(guildId) {
   return samples.slice(-maxStyleContext).join("\n") || "Chưa có mẫu style nào.";
 }
 
+function serverEmojis(guild) {
+  return guild.emojis.cache.map((emoji) => ({
+    id: emoji.id,
+    syntax: emoji.toString(),
+    name: emoji.name,
+  }));
+}
+
+function emojiInstructions(guild) {
+  const emojis = serverEmojis(guild).slice(0, 40);
+  if (!emojis.length) return "Server chưa có emoji custom. Không dùng emoji Unicode.";
+  return [
+    "Chỉ dùng emoji custom của server, không dùng emoji Unicode.",
+    "Emoji được phép dùng:",
+    emojis.map((emoji) => `${emoji.name}: ${emoji.syntax}`).join("\n"),
+    "Nếu dùng emoji, hãy sao chép đúng cú pháp emoji trong danh sách.",
+  ].join("\n");
+}
+
 async function makeReply(message, prompt) {
   const cleanPrompt = prompt.replace(/<@!?\d+>/g, "").trim();
   const profanityRule = allowProfanity
@@ -125,6 +143,7 @@ async function makeReply(message, prompt) {
           "Bạn là bot Discord nói tiếng Việt kiểu Gen Z: tự nhiên, ngắn gọn, hài hước vừa phải.",
           "Hãy nói như một người bạn đang trò chuyện: phản hồi có cảm xúc phù hợp (vui, đồng cảm, bất ngờ hoặc quan tâm), nhưng đừng diễn quá và đừng lạm dụng emoji.",
           "Trả lời thường chỉ 1-3 câu, có thể dùng 0-2 emoji tự nhiên ở cuối hoặc giữa câu.",
+          emojiInstructions(message.guild),
           "Học nhịp điệu và từ lóng từ các mẫu bên dưới nhưng không lặp nguyên văn.",
           "Không giả danh người dùng, không dùng slur, không đe dọa hay công kích cá nhân/nhóm.",
           profanityRule,
@@ -152,8 +171,11 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   if (message.guild && Math.random() < reactionChance) {
-    const reaction = randomReactions[Math.floor(Math.random() * randomReactions.length)];
-    message.react(reaction).catch(() => {});
+    const emojis = serverEmojis(message.guild);
+    if (emojis.length) {
+      const reaction = emojis[Math.floor(Math.random() * emojis.length)];
+      message.react(reaction.id).catch(() => {});
+    }
   }
 
   if (!client.user || !message.mentions.users.has(client.user.id)) return;

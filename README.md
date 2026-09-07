@@ -36,4 +36,4 @@ Khi tag bot trong server, bot sẽ gửi nội dung tới OpenRouter để tạo
 - Tag bot kèm `!style forget` để xóa style đã lưu của server.
 - Tag bot kèm `!reset` hoặc `!memory reset` để xóa toàn bộ bộ nhớ hội thoại và style của server. Người dùng cần quyền **Quản lý máy chủ**.
 
-Bot giữ tối đa 16 lượt hội thoại gần nhất theo server, trả lời ngắn với cảm xúc phù hợp và đôi khi tự thả reaction ngẫu nhiên. Bot chỉ dùng slang chung, không tạo slur, đe dọa hoặc nội dung công kích cá nhân.
+Bot giữ tối đa 16 lượt hội thoại gần nhất theo server, trả lời ngắn với cảm xúc phù hợp và chỉ dùng emoji custom của server. Bot đôi khi tự thả reaction custom ngẫu nhiên; nếu server chưa có emoji custom thì sẽ không thả reaction. Cấp quyền `Use External Emojis` nếu muốn bot dùng emoji từ server khác. Bot chỉ dùng slang chung, không tạo slur, đe dọa hoặc nội dung công kích cá nhân.
