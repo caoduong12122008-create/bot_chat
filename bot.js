@@ -9,7 +9,11 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 if (!discordToken) throw new Error("DISCORD_BOT_TOKEN is not set");
 if (!openaiApiKey) throw new Error("OPENAI_API_KEY is not set");
 
-const openaiModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const modelCandidates = (process.env.OPENROUTER_MODELS || process.env.OPENAI_MODEL || "openrouter/free")
+  .split(",")
+  .map((model) => model.trim())
+  .filter(Boolean);
+let activeModelIndex = 0;
 const allowProfanity = (process.env.ALLOW_PROFANITY || "true").toLowerCase() === "true";
 const memoryFile = path.join(__dirname, "server_style.json");
 const maxSamples = 80;
@@ -28,7 +32,38 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
-const openai = new OpenAI({ apiKey: openaiApiKey });
+const openai = new OpenAI({
+  apiKey: openaiApiKey,
+  baseURL: process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1",
+});
+
+function canTryNextModel(error) {
+  const status = error.status || error.response?.status;
+  return [402, 404, 408, 429, 500, 502, 503, 504].includes(status);
+}
+
+async function createCompletion(request) {
+  let lastError;
+  for (let attempt = 0; attempt < modelCandidates.length; attempt += 1) {
+    const modelIndex = (activeModelIndex + attempt) % modelCandidates.length;
+    try {
+      const response = await openai.chat.completions.create({
+        ...request,
+        model: modelCandidates[modelIndex],
+      });
+      activeModelIndex = modelIndex;
+      if (attempt > 0) {
+        console.log(`Switched to fallback model: ${modelCandidates[modelIndex]}`);
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (!canTryNextModel(error) || attempt === modelCandidates.length - 1) throw error;
+      console.warn(`Model unavailable: ${modelCandidates[modelIndex]}; trying the next model.`);
+    }
+  }
+  throw lastError;
+}
 
 function loadMemory() {
   try {
@@ -80,8 +115,7 @@ async function makeReply(message, prompt) {
   const profanityRule = allowProfanity
     ? "Có thể dùng slang/chửi nhẹ kiểu Gen Z."
     : "Không dùng profanity.";
-  const response = await openai.chat.completions.create({
-    model: openaiModel,
+  const response = await createCompletion({
     temperature: 0.9,
     max_tokens: 180,
     messages: [

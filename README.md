@@ -1,6 +1,6 @@
 # Discord Gen Z Mention Bot
 
-Bot Discord chính thức dùng JavaScript, OpenAI để nói chuyện kiểu Gen Z và chỉ trả lời khi được tag.
+Bot Discord chính thức dùng JavaScript, OpenRouter để nói chuyện kiểu Gen Z và chỉ trả lời khi được tag.
 
 Bot ghi nhớ tối đa 80 mẫu tin nhắn ngắn theo từng server để lấy từ lóng/cách nói chung. Bot không lưu tên người dùng và không lặp nguyên văn mẫu tin nhắn.
 
@@ -16,7 +16,8 @@ npm install
 ```
 
 5. Sao chép `.env.example` thành `.env`, rồi điền bot token. Không chia sẻ token này.
-	`OPENAI_API_KEY` là API key OpenAI của bạn; `OPENAI_MODEL` mặc định là `gpt-4o-mini`.
+	Tạo API key tại [OpenRouter](https://openrouter.ai/keys), điền vào `OPENAI_API_KEY`, giữ `OPENAI_BASE_URL=https://openrouter.ai/api/v1` và dùng `OPENAI_MODEL=openrouter/free`.
+	`openrouter/free` sẽ tự chọn một model miễn phí đang khả dụng. Nếu muốn tự chỉ định thứ tự fallback, dùng `OPENROUTER_MODELS=model-a:free,model-b:free,openrouter/free`.
 	`ALLOW_PROFANITY=true` cho phép slang chửi nhẹ; đặt thành `false` để tắt.
 	`REPLY_COOLDOWN_MS=8000` giới hạn thời gian giữa hai lần bot trả lời cùng một người, giúp tránh spam.
 	`RANDOM_REACTION_CHANCE=0.12` là xác suất bot thả reaction vào tin nhắn thường; đặt `0` để tắt.
@@ -26,7 +27,7 @@ npm install
 npm start
 ```
 
-Khi tag bot trong server, bot sẽ gửi nội dung tới OpenAI để tạo câu trả lời theo ngữ cảnh và style đã học. API key và token chỉ nằm trong `.env`, không commit lên Git.
+Khi tag bot trong server, bot sẽ gửi nội dung tới OpenRouter để tạo câu trả lời theo ngữ cảnh và style đã học. Nếu model gặp lỗi quota/rate limit, bot tự thử model tiếp theo trong danh sách. API key và token chỉ nằm trong `.env`, không commit lên Git.
 
 ## Điều khiển style
 
