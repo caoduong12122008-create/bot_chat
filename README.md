@@ -21,7 +21,7 @@ npm install
 	`ALLOW_PROFANITY=true` cho phép slang chửi nhẹ; đặt thành `false` để tắt.
 	`REPLY_COOLDOWN_MS=8000` giới hạn thời gian giữa hai lần bot trả lời cùng một người, giúp tránh spam.
 	`RANDOM_REACTION_CHANCE=0.12` là xác suất bot thả reaction vào tin nhắn thường; đặt `0` để tắt.
-	`AUTO_REPLY_CHANCE=0.025` là xác suất bot tự trả lời tin nhắn không được tag; đặt `0` để chỉ trả lời khi được tag.
+	`AUTO_REPLY_CHANCE=0.1` là xác suất 10% bot tự trả lời tin nhắn không được tag; đặt `0` để chỉ trả lời khi được tag.
 	`AUTO_REPLY_COOLDOWN_MS=120000` giới hạn mỗi server chỉ có một lần bot tự trả lời trong 2 phút.
 6. Chạy bot:
 
