@@ -19,6 +19,7 @@ const memoryFile = path.join(__dirname, "server_style.json");
 const maxSamples = 80;
 const maxStyleContext = 12;
 const maxConversation = 16;
+const channelHistoryLimit = Number(process.env.CHANNEL_HISTORY_LIMIT || 12);
 const cooldownMs = Number(process.env.REPLY_COOLDOWN_MS || 8000);
 const reactionChance = Number(process.env.RANDOM_REACTION_CHANCE || 0.12);
 const autoReplyChance = Number(process.env.AUTO_REPLY_CHANCE || 0.1);
@@ -112,6 +113,15 @@ function learnedStyle(guildId) {
   return samples.slice(-maxStyleContext).join("\n") || "Chưa có mẫu style nào.";
 }
 
+async function recentChannelHistory(message) {
+  const messages = await message.channel.messages.fetch({ limit: channelHistoryLimit + 1 });
+  return messages
+    .filter((item) => item.id !== message.id && !item.author.bot && item.content.trim())
+    .map((item) => `${item.author.username}: ${item.content.replace(/\s+/g, " ").trim().slice(0, 300)}`)
+    .reverse()
+    .join("\n") || "Chưa có lịch sử tin nhắn gần đây.";
+}
+
 function serverEmojis(guild) {
   return guild.emojis.cache.map((emoji) => ({
     id: emoji.id,
@@ -136,6 +146,7 @@ async function makeReply(message, prompt) {
   const profanityRule = allowProfanity
     ? "Có thể dùng slang/chửi nhẹ kiểu Gen Z."
     : "Không dùng profanity.";
+  const channelHistory = await recentChannelHistory(message);
   const response = await createCompletion({
     temperature: 0.9,
     max_tokens: 180,
@@ -154,6 +165,8 @@ async function makeReply(message, prompt) {
           learnedStyle(message.guild.id),
           "Lịch sử gần đây của cuộc trò chuyện (chỉ dùng để giữ mạch, không tiết lộ lại dữ liệu riêng tư):",
           conversationContext(message.guild.id),
+          "Các tin nhắn gần đây trong kênh hiện tại (dùng để hiểu chủ đề, không nhắc lại thông tin riêng tư nếu không cần):",
+          channelHistory,
         ].join("\n"),
       },
       { role: "user", content: cleanPrompt || "Chào bot đi." },
