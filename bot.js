@@ -21,7 +21,10 @@ const maxStyleContext = 12;
 const maxConversation = 16;
 const cooldownMs = Number(process.env.REPLY_COOLDOWN_MS || 8000);
 const reactionChance = Number(process.env.RANDOM_REACTION_CHANCE || 0.12);
+const autoReplyChance = Number(process.env.AUTO_REPLY_CHANCE || 0.025);
+const autoReplyCooldownMs = Number(process.env.AUTO_REPLY_COOLDOWN_MS || 120000);
 const cooldowns = new Map();
+const autoReplyCooldowns = new Map();
 const repliesInProgress = new Set();
 
 const client = new Client({
@@ -178,7 +181,18 @@ client.on("messageCreate", async (message) => {
     }
   }
 
-  if (!client.user || !message.mentions.users.has(client.user.id)) return;
+  if (!message.guild || !client.user) return;
+
+  const isMention = message.mentions.users.has(client.user.id);
+  const looksLikeCommand = message.content.trim().startsWith("!");
+  const canAutoReply = message.content.trim().length >= 3 && !looksLikeCommand && !isMention;
+  const now = Date.now();
+  const lastAutoReply = autoReplyCooldowns.get(message.guild.id) || 0;
+  const shouldAutoReply = canAutoReply
+    && now - lastAutoReply >= autoReplyCooldownMs
+    && Math.random() < autoReplyChance;
+
+  if (!isMention && !shouldAutoReply) return;
 
   if (!message.guild) {
     await message.reply("Lệnh style chỉ dùng được trong server.");
@@ -220,10 +234,11 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+  if (shouldAutoReply) autoReplyCooldowns.set(message.guild.id, now);
+
   const cooldownKey = `${message.guild.id}:${message.author.id}`;
-  const now = Date.now();
   const lastReply = cooldowns.get(cooldownKey) || 0;
-  if (now - lastReply < cooldownMs) {
+  if (!shouldAutoReply && now - lastReply < cooldownMs) {
     return;
   }
   if (repliesInProgress.has(cooldownKey)) return;
